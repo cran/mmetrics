@@ -4,9 +4,6 @@ knitr::opts_chunk$set(
   comment = "#>"
 )
 
-## ----setup---------------------------------------------------------------
-library(mmetrics)
-
 ## ------------------------------------------------------------------------
 # Dummy data
 df <- data.frame(
@@ -37,5 +34,8 @@ mmetrics::add(df, gender, age, metrics = metrics)
 mmetrics::add(df, metrics = metrics)
 
 ## ------------------------------------------------------------------------
-mmetrics::add(df, metrics = metrics, summarize = TRUE)
+mmetrics::add(df, metrics = metrics, summarize = FALSE)
+
+## ------------------------------------------------------------------------
+mmetrics::disaggregate(metrics)
 
