@@ -5,17 +5,9 @@ knitr::opts_chunk$set(
 )
 
 ## ------------------------------------------------------------------------
-# Dummy data
-df <- data.frame(
-  gender = rep(c("M", "F"), 5),
-  age = (1:10)*10,
-  cost = c(51:60),
-  impression = c(101:110),
-  click = c(0:9)*3,
-  conversion = c(0:9)
-)
-
-head(df)
+# Load dummy data
+df <- mmetrics::dummy_data
+df
 
 ## ------------------------------------------------------------------------
 # Example metrics
@@ -34,8 +26,35 @@ mmetrics::add(df, gender, age, metrics = metrics)
 mmetrics::add(df, metrics = metrics)
 
 ## ------------------------------------------------------------------------
-mmetrics::add(df, metrics = metrics, summarize = FALSE)
+mmetrics::add(df, metrics = mmetrics::disaggregate(metrics), summarize = FALSE)
 
 ## ------------------------------------------------------------------------
-mmetrics::disaggregate(metrics)
+# Original metrics. sum() is used for this metrics
+metrics
+
+## ------------------------------------------------------------------------
+# Disaggregate metrics!
+metrics_disaggregated <- mmetrics::disaggregate(metrics)
+# Woo! sum() are removed!!!
+metrics_disaggregated
+
+## ------------------------------------------------------------------------
+dplyr::mutate(df, !!!metrics_disaggregated)
+
+## ------------------------------------------------------------------------
+mmetrics::gmutate(df, metrics = metrics_disaggregated)
+
+## ------------------------------------------------------------------------
+# Completely the same result with mmetrics::add(df, gender, metrics = metrics)
+mmetrics::gsummarize(df, gender, metrics = metrics)
+
+## ------------------------------------------------------------------------
+# Cost ratio in each gender group
+mmetrics::gmutate(df, gender, metrics = mmetrics::define(cost_ratio = cost/sum(cost)))
+
+## ------------------------------------------------------------------------
+# Define keys
+keys <- c("gender", "age")
+# Run
+purrr::map(keys, ~ mmetrics::add(df, !!rlang::sym(.x), metrics = metrics))
 

@@ -1,7 +1,9 @@
 #' @include mmetrics.R
+NULL
 
 # Advertisng world metrics
 ad_metrics <- define(
+  count = n(),
   cost = sum(cost),
   impression = sum(impression),
   click = sum(click),

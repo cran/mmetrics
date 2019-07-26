@@ -14,23 +14,18 @@ knitr::opts_chunk$set(
 )
 ```
 
+## Introduction
+Are you boring of repeated tabulation work? This package is for you.
+With this package, you can reuse metrics which you define and easily do tabulation work on different analysis axes.
+Focus on more productive things with this package! Have a wonderful life!
 
-This vignette shows you how to use `{mmetrics}` package.
+## Load Dummy Data
 
-## Create Dummy Data
-First, we create dummy data for this example.
+First, we load dummy data from {mmetrics} package for this example.
 ```{r}
-# Dummy data
-df <- data.frame(
-  gender = rep(c("M", "F"), 5),
-  age = (1:10)*10,
-  cost = c(51:60),
-  impression = c(101:110),
-  click = c(0:9)*3,
-  conversion = c(0:9)
-)
-
-head(df)
+# Load dummy data
+df <- mmetrics::dummy_data
+df
 ```
 
 ## Define metrics
@@ -46,6 +41,7 @@ metrics <- mmetrics::define(
 ## How to use mmetrics::add() 
 
 ### mmetrics::add() with sigle grouping key
+
 Call `mmetrics::add()` with grouping key (here `gender`) then we will get new `data.frame` with defined metrics.
 ```{r}
 mmetrics::add(df, gender, metrics = metrics)
@@ -58,18 +54,72 @@ mmetrics::add(df, gender, age, metrics = metrics)
 ```
 
 ### mmetrics::add() without any grouping keys
-Summarize all data when you do not specify any grouping keys.
+If we do not specify any grouping keys, `mmetrics::add()` summarize all data as a default option.
 ```{r}
 mmetrics::add(df, metrics = metrics)
 ```
 
-When you set `summarize = FALSE` , `mmetrics::add()` behave like `dplyr::mutate()`.
+If we want `mmetrics::add()` to behave like `dplyr::mutate()` use `mmetrics::disaggregate()`.
 ```{r}
-mmetrics::add(df, metrics = metrics, summarize = FALSE)
+mmetrics::add(df, metrics = mmetrics::disaggregate(metrics), summarize = FALSE)
 ```
 
-In this situation, `mmetrics::disaggregate()` is used inside to disaggregate metrics.
-See the result of `disaggregate(metrics)` to check wether output metrics is what you want.
+
+### Remove aggregate function from metrics using `mmetrics::disaggregate()`
+It is hassle for users to re-define metrics when you would like to use these for `dplyr::mutate()`.
+In this case, you can use `mmetrics::disaggregate()` to remove *the first aggregation function* for the argument and return disaggregated metrics.
+
 ```{r}
-mmetrics::disaggregate(metrics)
+# Original metrics. sum() is used for this metrics
+metrics
 ```
+
+```{r}
+# Disaggregate metrics!
+metrics_disaggregated <- mmetrics::disaggregate(metrics)
+# Woo! sum() are removed!!!
+metrics_disaggregated
+```
+
+You can use these metrics with `dplyr::mutate()` for row-wise metrics computation.
+```{r}
+dplyr::mutate(df, !!!metrics_disaggregated)
+```
+
+...or, you can do the same compucation using `mmetrics::gmutate()` defind in our package.
+In this case, you do not need to write `!!!` (bang-bang-bang) operator explicitly.
+```{r}
+mmetrics::gmutate(df, metrics = metrics_disaggregated)
+```
+
+## gmutate() and gsummarize()
+
+`mmetrics::add()` is a just wrapper function for `mmetrics::gmutate()` and `mmetrics::gsummarize()`.
+We can use these functions directly instead of `mmetrics::add()`.
+
+```{r}
+# Completely the same result with mmetrics::add(df, gender, metrics = metrics)
+mmetrics::gsummarize(df, gender, metrics = metrics)
+```
+
+
+`metrics::gmutate()` is useful to calculate the metrics like "ratio in a group".
+```{r}
+# Cost ratio in each gender group
+mmetrics::gmutate(df, gender, metrics = mmetrics::define(cost_ratio = cost/sum(cost)))
+```
+
+
+## Run multiple tabulations at once
+
+If you would like to run code with multiple keys all at onece, you can use the combination of `!!(bangbang operator)` and `rlang::sym` as the following:
+
+```{r}
+# Define keys
+keys <- c("gender", "age")
+# Run
+purrr::map(keys, ~ mmetrics::add(df, !!rlang::sym(.x), metrics = metrics))
+```
+
+
+
